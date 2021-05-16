@@ -18,6 +18,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Importation of routes
 const userRoutes = require("./routes/user");
 app.use(userRoutes);
+const userRoom = require("./routes/room");
+app.use(userRoom);
 
 // Launching of the server
 app.all("*", (req, res) => {
