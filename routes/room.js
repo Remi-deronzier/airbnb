@@ -158,4 +158,33 @@ router.put("/rental/update", isAuthenticated, async (req, res) => {
   }
 });
 
+// route to delete an ad
+
+router.delete("/rental/delete", isAuthenticated, async (req, res) => {
+  console.log("route: /rental/delete");
+  console.log(req.fields);
+  try {
+    await Room.findByIdAndDelete(req.fields.id);
+    res.status(200).json({ message: "Rental successfully deleted" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// route to read an ad
+
+router.get("/rental/:id", async (req, res) => {
+  console.log("route: /rental/:id");
+  console.log(req.params);
+  try {
+    const rental = await Room.findById(req.params.id).populate(
+      "land_lord",
+      "account"
+    );
+    res.status(400).json(rental);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 module.exports = router;
