@@ -208,4 +208,33 @@ router.get("/rental/:id", async (req, res) => {
   }
 });
 
+// route to delete pictures of an ad
+
+router.delete("/rental/delete-pictures", isAuthenticated, async (req, res) => {
+  console.log("route: /rental/delete");
+  console.log(req.fields);
+  try {
+    const reqKeys = Object.keys(req.fields);
+    if (reqKeys.length !== 0) {
+      const regex = /(?<=airbnb\/rooms\/)\w+(?=\/\w+)/;
+      const rental = await Room.findById(req.fields.picture1.match(regex)[0]);
+      await cloudinary.api.delete_resources(Object.values(req.fields));
+      const picturesToKeep = await rental.rental_image
+        .reduce((arr, element, index) => {
+          if (Object.values(req.fields).indexOf(element.public_id) === -1) {
+            arr.push(index);
+          }
+          return arr;
+        }, [])
+        .map((element) => rental.rental_image[element]);
+      rental.rental_image = picturesToKeep;
+      rental.markModified("rental_image"); // update the array in the DBS
+      await rental.save();
+    }
+    res.status(200).json({ message: "Rental successfully updated!" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 module.exports = router;

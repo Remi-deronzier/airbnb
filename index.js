@@ -18,9 +18,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Connection with cloudinary
 
 cloudinary.config({
-  cloud_name: "remideronzier",
-  api_key: "465139878349773",
-  api_secret: "j_Rz6EgxMYysl4bJHG8wJu7ELvg",
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // Importation of routes
