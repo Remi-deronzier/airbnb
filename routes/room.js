@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
+const cloudinary = require("cloudinary").v2;
 
 const User = require("../models/User");
 const Room = require("../models/Room");
@@ -11,6 +12,7 @@ const isAuthenticated = require("../middlewares/isAuthenticated");
 router.post("/rental/publish", isAuthenticated, async (req, res) => {
   console.log("route : /room/publish");
   console.log(req.fields);
+  console.log(req.files);
   try {
     const {
       name,
@@ -53,6 +55,25 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
         rental_dates: dates,
         land_lord: req.user,
       });
+      const files = req.files; // upload several pictures
+      const fileKeys = Object.keys(files);
+      if (fileKeys.length !== 0) {
+        const promises = fileKeys.map(async (element) => {
+          try {
+            const picture = await cloudinary.uploader.upload(
+              files[element].path,
+              {
+                folder: `/airbnb/rooms/${newRoom._id}`,
+              }
+            );
+            return picture;
+          } catch (error) {
+            return res.status(400).json({ message: error.message });
+          }
+        });
+        const pix = await Promise.all(promises);
+        newRoom.rental_image = pix;
+      }
       await newRoom.save();
       res.status(200).json(newRoom);
     }
