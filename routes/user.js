@@ -4,6 +4,7 @@ const router = express.Router();
 const uid2 = require("uid2");
 const SHA256 = require("crypto-js/sha256");
 const encBase64 = require("crypto-js/enc-base64");
+const cloudinary = require("cloudinary").v2;
 
 const User = require("../models/User");
 
@@ -12,6 +13,7 @@ const User = require("../models/User");
 router.post("/user/signup", async (req, res) => {
   console.log("route: /signup");
   console.log(req.fields);
+  console.log(req.files);
   try {
     if (await User.findOne({ email: req.fields.email })) {
       res
@@ -34,6 +36,11 @@ router.post("/user/signup", async (req, res) => {
         hash: hash,
         salt: salt,
       });
+      const picture = await cloudinary.uploader.upload(req.files.picture.path, {
+        folder: `/airbnb/users/`,
+        public_id: newUser._id,
+      });
+      newUser.account.avatar = picture;
       await newUser.save();
       res.status(200).json({
         id_: newUser._id,

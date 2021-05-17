@@ -2,7 +2,7 @@
 const express = require("express");
 const formidable = require("express-formidable");
 const mongoose = require("mongoose");
-const cloudinary = require("cloudinary");
+const cloudinary = require("cloudinary").v2;
 require("dotenv").config();
 
 const app = express();
@@ -13,6 +13,14 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   useCreateIndex: true,
+});
+
+// Connection with cloudinary
+
+cloudinary.config({
+  cloud_name: "remideronzier",
+  api_key: "465139878349773",
+  api_secret: "j_Rz6EgxMYysl4bJHG8wJu7ELvg",
 });
 
 // Importation of routes
