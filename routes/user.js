@@ -7,6 +7,7 @@ const encBase64 = require("crypto-js/enc-base64");
 const cloudinary = require("cloudinary").v2;
 
 const User = require("../models/User");
+const Room = require("../models/Room");
 
 // sign_up
 
@@ -81,4 +82,35 @@ router.post("/user/login", async (req, res) => {
   }
 });
 
+// route to get information abour one user
+
+router.get("/user/:id", async (req, res) => {
+  console.log("route: /user/:id");
+  console.log(req.params);
+  try {
+    const user = await User.findById(req.params.id).select("account email");
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// route to get all ad about one user
+
+// doesn't work yet
+router.get("/user-rentals/:id", async (req, res) => {
+  console.log("route: /user-rentals/:id");
+  console.log(req.params);
+  try {
+    const filter = { land_lord: Number(req.params.id) };
+    const rentals = await Room.find(filter).populate("land_lord", "account");
+    const count = await Room.countDocuments(filter);
+    res.status(200).json({
+      count: count,
+      rentals: rentals,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 module.exports = router;

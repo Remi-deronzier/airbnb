@@ -243,4 +243,56 @@ router.delete("/rental/delete-pictures", isAuthenticated, async (req, res) => {
   }
 });
 
+// route to filter an ad
+
+router.get("/rentals", async (req, res) => {
+  console.log("route: /rentals");
+  console.log(req.query);
+  try {
+    let { location, date, limit, page, priceMin, priceMax, sort } = req.query;
+    const filter = {};
+    if (location) {
+      filter.rental_location = new RegExp(location, "i");
+    }
+    if (date) {
+      filter.rental_dates = date;
+    }
+    if (priceMax) {
+      filter.rental_price_one_night = { $lte: Number(priceMax) };
+      if (priceMin) {
+        filter.rental_price_one_night.$gte = Number(priceMin);
+      }
+    }
+    if (priceMin && !filter.rental_price_one_night) {
+      filter.rental_price_one_night = { $gte: Number(priceMin) };
+    }
+    const sortFilter = {};
+    if (sort === "price-desc") {
+      sortFilter.rental_price_one_night = "desc";
+    }
+    if (sort === "price-asc") {
+      sortFilter.rental_price_one_night = "asc";
+    }
+    if (!limit) {
+      limit = 3;
+    }
+    if (!page || page < 1) {
+      page = 1;
+    }
+    const search = await Room.find(filter)
+      .sort(sortFilter)
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .populate("land_lord", "account");
+    // .select("rental_price_one_night rental_location");
+    const count = await Room.countDocuments(filter);
+    res.status(200).json({
+      count: count,
+      rooms: search,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 module.exports = router;
