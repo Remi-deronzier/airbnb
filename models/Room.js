@@ -13,6 +13,7 @@ const Room = mongoose.model("Room", {
     type: Number,
     max: 100000,
   },
+  rental_location: String,
   rental_details: Array,
   //   [
   //     {NUMBER_BEDROOMS: 4},

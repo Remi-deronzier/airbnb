@@ -27,6 +27,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
       entireHome,
       selfCheckin,
       hairDryer,
+      location,
     } = req.fields;
     dates = Object.values(req.fields).filter((element, index, arr) =>
       Object.keys(req.fields)[index].match(/date/)
@@ -41,6 +42,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
         rental_name: name,
         rental_description: description,
         rental_price_one_night: price,
+        rental_location: location,
         rental_details: [
           { NUMBER_BEDROOMS: numberBedrooms },
           { WIFI: wifi },
@@ -105,6 +107,7 @@ router.put("/rental/update", isAuthenticated, async (req, res) => {
         entireHome,
         selfCheckin,
         hairDryer,
+        location,
       } = req.fields;
       const reqKeys = Object.keys(req.fields);
       const datesToDelete = Object.values(req.fields).filter(
@@ -152,6 +155,9 @@ router.put("/rental/update", isAuthenticated, async (req, res) => {
             break;
           case "hairDryer":
             obj.rental_details[8].HAIR_DRYER = hairDryer;
+            break;
+          case "location":
+            obj.rental_location = location;
             break;
         }
         return obj;
