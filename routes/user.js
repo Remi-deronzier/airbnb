@@ -165,4 +165,40 @@ router.put("/user/update", isAuthenticated, async (req, res) => {
   }
 });
 
+// route to delete a user and all his/her ads
+
+router.delete("/user/delete", isAuthenticated, async (req, res) => {
+  console.log("route: /user/delete");
+  try {
+    const user = req.user;
+    console.log(user._id);
+    const search = await Room.find({
+      land_lord: user._id,
+    });
+    const picturesToDelete = search
+      .map((element) => element.rental_image)
+      .reduce((arr, element) => {
+        for (let i = 0; i < element.length; i++) {
+          arr.push(element[i].public_id);
+        }
+        return arr;
+      }, []);
+    console.log(search);
+    console.log(picturesToDelete);
+    const idRentalToDelete = search.map((element) => element._id);
+    await cloudinary.api.delete_resources(picturesToDelete); // delete all the pictures of the ads in cloudinary
+    idRentalToDelete.forEach(
+      async (element) =>
+        await cloudinary.api.delete_folder(`/airbnb/rooms/${element}`) // delete all the folders of the ads in cloudinary
+    );
+    await User.findByIdAndDelete(user._id); // delete the user in mongodb
+    await Room.deleteMany({
+      land_lord: user._id, // delete all the ads in mongodb
+    });
+    res.status(200).json({ message: "User successfully deleted" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 module.exports = router;
