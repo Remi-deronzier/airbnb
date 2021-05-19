@@ -97,18 +97,18 @@ router.get("/user/:id", async (req, res) => {
 
 // route to get all ad about one user
 
-// doesn't work yet
 router.get("/user-rentals/:id", async (req, res) => {
   console.log("route: /user-rentals/:id");
   console.log(req.params);
   try {
-    const filter = { land_lord: Number(req.params.id) };
-    const rentals = await Room.find(filter).populate("land_lord", "account");
-    const count = await Room.countDocuments(filter);
-    res.status(200).json({
-      count: count,
-      rentals: rentals,
-    });
+    const rentalsAgregation = await Room.find().populate(
+      "land_lord",
+      "account"
+    );
+    const rentals = rentalsAgregation.filter(
+      (element) => String(element.land_lord._id) === String(req.params.id) // Important not to forget the String to compare strings between strings
+    );
+    res.status(200).json(rentals);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
