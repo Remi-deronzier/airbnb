@@ -15,7 +15,6 @@ const isAuthenticated = require("../middlewares/isAuthenticated");
 router.post("/user/signup", async (req, res) => {
   console.log("route: /signup");
   console.log(req.fields);
-  console.log(req.files);
   try {
     const { email, username, phone, password } = req.fields;
     const usernameExistingDBCheck = await User.find({
@@ -46,16 +45,6 @@ router.post("/user/signup", async (req, res) => {
         hash: hash,
         salt: salt,
       });
-      if (Object.keys(req.files).length !== 0) {
-        const picture = await cloudinary.uploader.upload(
-          req.files.picture.path,
-          {
-            folder: `/airbnb/users/`,
-            public_id: newUser._id,
-          }
-        );
-        newUser.account.avatar = picture;
-      }
       await newUser.save();
       res.status(200).json({
         id_: newUser._id,
@@ -65,6 +54,46 @@ router.post("/user/signup", async (req, res) => {
     }
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// route to upload a picture for a user
+
+router.put("/user/upload-picture/:id", async (req, res) => {
+  console.log("route: /user/upload-picture/:id");
+  console.log(req.params);
+  console.log(req.files);
+  if (req.params.id) {
+    try {
+      const user = await User.findById(req.params.id);
+      console.log(user);
+      if (user) {
+        if (req.files.picture) {
+          const picture = await cloudinary.uploader.upload(
+            req.files.picture.path,
+            {
+              folder: `/airbnb/users/`,
+              public_id: user._id,
+            }
+          );
+          user.account.avatar = picture;
+          await user.save();
+          res
+            .status(200)
+            .json(
+              await User.findById(req.params.id).select("account email token")
+            );
+        } else {
+          res.status(400).json({ message: "Missing parameters" });
+        }
+      } else {
+        res.status(400).json({ message: "User not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  } else {
+    res.status(400).json({ message: "Missing ID parameter" });
   }
 });
 
