@@ -90,122 +90,126 @@ router.put("/rental/update/:id", isAuthenticated, async (req, res) => {
   console.log("route: /rental/update");
   console.log(req.fields);
   console.log(req.params);
-  try {
-    const rental = await Room.findById(req.params.id);
-    if (!rental) {
-      res.status(400).json({ message: "this rental doesn't exist" });
-    } else {
-      if (String(req.user._id) === String(rental.land_lord._id)) {
-        // check that the token match with the owner of the ad
-        const {
-          name,
-          description,
-          price,
-          numberBedrooms,
-          wifi,
-          kitchen,
-          workspace,
-          tv,
-          iron,
-          entireHome,
-          selfCheckin,
-          hairDryer,
-          location,
-        } = req.fields;
-        if (
-          !name &&
-          !description &&
-          !price &&
-          !numberBedrooms &&
-          !wifi &&
-          !kitchen &&
-          !workspace &&
-          !tv &&
-          !iron &&
-          !entireHome &&
-          !selfCheckin &&
-          !hairDryer &&
-          !location // check that at least one modification of the ad has been specified by the user
-        ) {
-          res.status(400).json({ message: "Missing parameters" });
-        } else {
-          const reqKeys = Object.keys(req.fields);
-          const datesToDelete = Object.values(req.fields).filter(
-            (element, index, arr) =>
-              Object.keys(req.fields)[index].match(/date-to-delete/)
-          );
-          const datesToAdd = Object.values(req.fields).filter(
-            (element, index, arr) =>
-              Object.keys(req.fields)[index].match(/date-to-add/)
-          );
-          let rentalUpdated = reqKeys.reduce((obj, element) => {
-            switch (element) {
-              case "name":
-                obj.rental_name = name;
-                break;
-              case "description":
-                obj.rental_description = description;
-                break;
-              case "price":
-                obj.rental_price_one_night = price;
-                break;
-              case "numberBedrooms":
-                obj.rental_details[0].NUMBER_BEDROOMS = numberBedrooms;
-                break;
-              case "wifi":
-                obj.rental_details[1].WIFI = wifi;
-                break;
-              case "kitchen":
-                obj.rental_details[2].KITCHEN = kitchen;
-                break;
-              case "workspace":
-                obj.rental_details[3].DEDICATED_WORKSPACE = workspace;
-                break;
-              case "tv":
-                obj.rental_details[4].TV = tv;
-                break;
-              case "iron":
-                obj.rental_details[5].IRON = iron;
-                break;
-              case "entireHome":
-                obj.rental_details[6].ENTIRE_HOME = entireHome;
-                break;
-              case "selfCheckin":
-                obj.rental_details[7].SELF_CHECKIN = selfCheckin;
-                break;
-              case "hairDryer":
-                obj.rental_details[8].HAIR_DRYER = hairDryer;
-                break;
-              case "location":
-                obj.rental_location = location;
-                break;
-            }
-            return obj;
-          }, rental);
-          rentalUpdated = datesToAdd.reduce((obj, element) => {
-            // add new dates
-            if (obj.rental_dates.indexOf(element) === -1) {
-              obj.rental_dates.push(element);
-            }
-            // obj.rental_dates.push(element);
-            return obj;
-          }, rentalUpdated);
-          rentalUpdated = datesToDelete.reduce((obj, element) => {
-            // remove dates
-            obj.rental_dates.splice(obj.rental_dates.indexOf(element), 1);
-            return obj;
-          }, rentalUpdated);
-          rentalUpdated.markModified("rental_details"); // update the array in the DBS
-          rentalUpdated.markModified("rental_dates"); // update the array in the DBS
-          await rentalUpdated.save();
-          res.status(200).json({ message: "Rental successfully updated" });
-        }
+  if (req.params.id) {
+    try {
+      const rental = await Room.findById(req.params.id);
+      if (!rental) {
+        res.status(400).json({ message: "this rental doesn't exist" });
       } else {
-        res.status(401).json({ message: "Unauthorized" });
+        if (String(req.user._id) === String(rental.land_lord._id)) {
+          // check that the token match with the owner of the ad
+          const {
+            name,
+            description,
+            price,
+            numberBedrooms,
+            wifi,
+            kitchen,
+            workspace,
+            tv,
+            iron,
+            entireHome,
+            selfCheckin,
+            hairDryer,
+            location,
+          } = req.fields;
+          if (
+            !name &&
+            !description &&
+            !price &&
+            !numberBedrooms &&
+            !wifi &&
+            !kitchen &&
+            !workspace &&
+            !tv &&
+            !iron &&
+            !entireHome &&
+            !selfCheckin &&
+            !hairDryer &&
+            !location // check that at least one modification of the ad has been specified by the user
+          ) {
+            res.status(400).json({ message: "Missing parameters" });
+          } else {
+            const reqKeys = Object.keys(req.fields);
+            const datesToDelete = Object.values(req.fields).filter(
+              (element, index, arr) =>
+                Object.keys(req.fields)[index].match(/date-to-delete/)
+            );
+            const datesToAdd = Object.values(req.fields).filter(
+              (element, index, arr) =>
+                Object.keys(req.fields)[index].match(/date-to-add/)
+            );
+            let rentalUpdated = reqKeys.reduce((obj, element) => {
+              switch (element) {
+                case "name":
+                  obj.rental_name = name;
+                  break;
+                case "description":
+                  obj.rental_description = description;
+                  break;
+                case "price":
+                  obj.rental_price_one_night = price;
+                  break;
+                case "numberBedrooms":
+                  obj.rental_details[0].NUMBER_BEDROOMS = numberBedrooms;
+                  break;
+                case "wifi":
+                  obj.rental_details[1].WIFI = wifi;
+                  break;
+                case "kitchen":
+                  obj.rental_details[2].KITCHEN = kitchen;
+                  break;
+                case "workspace":
+                  obj.rental_details[3].DEDICATED_WORKSPACE = workspace;
+                  break;
+                case "tv":
+                  obj.rental_details[4].TV = tv;
+                  break;
+                case "iron":
+                  obj.rental_details[5].IRON = iron;
+                  break;
+                case "entireHome":
+                  obj.rental_details[6].ENTIRE_HOME = entireHome;
+                  break;
+                case "selfCheckin":
+                  obj.rental_details[7].SELF_CHECKIN = selfCheckin;
+                  break;
+                case "hairDryer":
+                  obj.rental_details[8].HAIR_DRYER = hairDryer;
+                  break;
+                case "location":
+                  obj.rental_location = location;
+                  break;
+              }
+              return obj;
+            }, rental);
+            rentalUpdated = datesToAdd.reduce((obj, element) => {
+              // add new dates
+              if (obj.rental_dates.indexOf(element) === -1) {
+                obj.rental_dates.push(element);
+              }
+              // obj.rental_dates.push(element);
+              return obj;
+            }, rentalUpdated);
+            rentalUpdated = datesToDelete.reduce((obj, element) => {
+              // remove dates
+              obj.rental_dates.splice(obj.rental_dates.indexOf(element), 1);
+              return obj;
+            }, rentalUpdated);
+            rentalUpdated.markModified("rental_details"); // update the array in the DBS
+            rentalUpdated.markModified("rental_dates"); // update the array in the DBS
+            await rentalUpdated.save();
+            res.status(200).json({ message: "Rental successfully updated" });
+          }
+        } else {
+          res.status(401).json({ message: "Unauthorized" });
+        }
       }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
     }
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } else {
+    res.status(400).json({ message: "Missing ID parameter" });
   }
 });
 
@@ -214,17 +218,25 @@ router.put("/rental/update/:id", isAuthenticated, async (req, res) => {
 router.delete("/rental/delete/:id", isAuthenticated, async (req, res) => {
   console.log("route: /rental/delete");
   console.log(req.params);
-  try {
-    const rental = await Room.findById(req.params.id);
-    if (String(req.user._id) === String(rental.land_lord._id)) {
-      // check that the token match with the owner of the ad
-      await Room.findByIdAndDelete(req.params.id);
-      res.status(200).json({ message: "Rental successfully deleted" });
-    } else {
-      res.status(401).json({ message: "Unauthorized" });
+  if (req.params.id) {
+    try {
+      const rental = await Room.findById(req.params.id);
+      if (rental) {
+        if (String(req.user._id) === String(rental.land_lord._id)) {
+          // check that the token match with the owner of the ad
+          await Room.findByIdAndDelete(req.params.id);
+          res.status(200).json({ message: "Rental successfully deleted" });
+        } else {
+          res.status(401).json({ message: "Unauthorized" });
+        }
+      } else {
+        res.status(400).json({ message: "Rental not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
     }
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } else {
+    res.status(400).json({ message: "Missing ID parameter" });
   }
 });
 
@@ -233,14 +245,22 @@ router.delete("/rental/delete/:id", isAuthenticated, async (req, res) => {
 router.get("/rental/:id", async (req, res) => {
   console.log("route: /rental/:id");
   console.log(req.params);
-  try {
-    const rental = await Room.findById(req.params.id).populate(
-      "land_lord",
-      "account"
-    );
-    res.status(400).json(rental);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  if (req.params.id) {
+    try {
+      const rental = await Room.findById(req.params.id).populate(
+        "land_lord",
+        "account"
+      );
+      if (rental) {
+        res.status(200).json(rental);
+      } else {
+        res.status(400).json({ message: "Rental not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  } else {
+    res.status(400).json({ message: "Missing ID parameter" });
   }
 });
 

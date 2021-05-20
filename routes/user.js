@@ -10,7 +10,7 @@ const User = require("../models/User");
 const Room = require("../models/Room");
 const isAuthenticated = require("../middlewares/isAuthenticated");
 
-// sign_up
+// route signup
 
 router.post("/user/signup", async (req, res) => {
   console.log("route: /signup");
@@ -68,7 +68,33 @@ router.post("/user/signup", async (req, res) => {
   }
 });
 
-// login
+// route to delete the avatar of one user
+
+router.delete("/user/delete-picture/:id", async (req, res) => {
+  console.log("route: /user/delete-picture/:id");
+  console.log(req.params);
+  if (req.params.id) {
+    try {
+      const user = await User.findById(req.params.id).select(
+        "email account token"
+      );
+      if (user) {
+        await cloudinary.api.delete_resources([user.account.avatar.public_id]);
+        user.account.avatar = null;
+        await user.save();
+        res.status(200).json(user);
+      } else {
+        res.status(400).json({ message: "User not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  } else {
+    res.status(400).json({ message: "Missing ID parameter" });
+  }
+});
+
+// route login
 
 router.post("/user/login", async (req, res) => {
   console.log("route: /login");
