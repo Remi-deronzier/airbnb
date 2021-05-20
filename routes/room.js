@@ -34,7 +34,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
     if (!name || !price || dates.length === 0 || !location) {
       res.status(400).json({
         message:
-          "You must specify a name, a price and at least one date for your rental",
+          "You must specify a name, a price, a location and at least one date for your rental",
       });
     } else {
       const newRoom = new Room({
@@ -152,6 +152,57 @@ router.put("/rental/upload-picture/:id", isAuthenticated, async (req, res) => {
     res.status(400).json({ message: "Missing ID parameter" });
   }
 });
+
+// route to delete one picture from an ad
+
+router.delete(
+  "/rental/delete-picture/:id",
+  isAuthenticated,
+  async (req, res) => {
+    console.log("router: /rental/delete-picture/:id");
+    console.log(req.params);
+    console.log(req.fields);
+    if (req.params.id) {
+      try {
+        const rental = await Room.findById(req.params.id);
+        if (rental) {
+          if (String(req.user._id) === String(rental.land_lord._id)) {
+            if (req.fields.picture_id) {
+              const index = rental.rental_image.reduce((arr, element, ind) => {
+                if (
+                  element.public_id ===
+                  `airbnb/rooms/${req.params.id}/${req.fields.picture_id}`
+                ) {
+                  arr.push(ind);
+                }
+                return arr;
+              }, [])[0];
+              await cloudinary.api.delete_resources([
+                rental.rental_image[index].public_id,
+              ]);
+              rental.rental_image.splice(index, 1);
+              rental.markModified("rental_image"); // update the array in the DBS
+              await rental.save();
+              res
+                .status(200)
+                .json({ message: "Picture successfully deleted!" });
+            } else {
+              res.status(400).json({ message: "Missing parameters" });
+            }
+          } else {
+            res.status(401).json({ message: "Unauthorized" });
+          }
+        } else {
+          res.status(400).json({ message: "Rental not found" });
+        }
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+    } else {
+      res.status(400).json({ message: "Missing ID parameter" });
+    }
+  }
+);
 
 // route to update an ad
 
