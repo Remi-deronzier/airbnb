@@ -72,11 +72,13 @@ router.post("/user/login", async (req, res) => {
   console.log("route: /login");
   console.log(req.fields);
   try {
-    const user = await User.findOne({ email: req.fields.email });
-    if (!user) {
-      res.status(400).json({ message: "First, you must register!" });
+    const { email, password } = req.fields;
+    const user = await User.findOne({ email: email });
+    if (!email || !password) {
+      res.status(400).json({ message: "Missing parameters" });
+    } else if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
     } else {
-      const { email, password } = req.fields;
       const salt = user.salt;
       const hash = SHA256(password + salt).toString(encBase64);
       if (hash === user.hash) {
