@@ -32,7 +32,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
     dates = Object.values(req.fields).filter((element, index, arr) =>
       Object.keys(req.fields)[index].match(/date/)
     );
-    if (!name || !price || dates.length === 0) {
+    if (!name || !price || dates.length === 0 || !location) {
       res.status(400).json({
         message:
           "You must specify a name, a price and at least one date for your rental",
