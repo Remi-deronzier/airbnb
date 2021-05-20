@@ -18,13 +18,15 @@ router.post("/user/signup", async (req, res) => {
   console.log(req.files);
   try {
     const { email, username, phone, password } = req.fields;
+    const usernameExistingDBCheck = await User.find({
+      account: { username: username },
+    });
+    // console.log(usernameExistingDBCheck.length);
     if (await User.findOne({ email: email })) {
       res.status(400).json({
         message: "The email is already taken",
       });
-    } else if (
-      (await User.find({ account: { username: username } }).length) !== 0
-    ) {
+    } else if (usernameExistingDBCheck.length !== 0) {
       res.status(400).json({
         message: "The username is already taken",
       });
@@ -57,7 +59,7 @@ router.post("/user/signup", async (req, res) => {
       await newUser.save();
       res.status(200).json({
         id_: newUser._id,
-        token: newUser._id,
+        token: newUser.token,
         account: newUser.account,
       });
     }
