@@ -211,12 +211,18 @@ router.put("/rental/update/:id", isAuthenticated, async (req, res) => {
 
 // route to delete an ad
 
-router.delete("/rental/delete", isAuthenticated, async (req, res) => {
+router.delete("/rental/delete/:id", isAuthenticated, async (req, res) => {
   console.log("route: /rental/delete");
-  console.log(req.fields);
+  console.log(req.params);
   try {
-    await Room.findByIdAndDelete(req.fields.id);
-    res.status(200).json({ message: "Rental successfully deleted" });
+    const rental = await Room.findById(req.params.id);
+    if (String(req.user._id) === String(rental.land_lord._id)) {
+      // check that the token match with the owner of the ad
+      await Room.findByIdAndDelete(req.params.id);
+      res.status(200).json({ message: "Rental successfully deleted" });
+    } else {
+      res.status(401).json({ message: "Unauthorized" });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
