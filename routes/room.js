@@ -12,7 +12,6 @@ const isAuthenticated = require("../middlewares/isAuthenticated");
 router.post("/rental/publish", isAuthenticated, async (req, res) => {
   console.log("route : /room/publish");
   console.log(req.fields);
-  console.log(req.files);
   try {
     const {
       name,
@@ -57,30 +56,100 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
         rental_dates: dates,
         land_lord: req.user,
       });
-      const files = req.files; // upload several pictures
-      const fileKeys = Object.keys(files);
-      if (fileKeys.length !== 0) {
-        const promises = fileKeys.map(async (element) => {
-          try {
-            const picture = await cloudinary.uploader.upload(
-              files[element].path,
-              {
-                folder: `/airbnb/rooms/${newRoom._id}`,
-              }
-            );
-            return picture;
-          } catch (error) {
-            return res.status(400).json({ message: error.message });
-          }
-        });
-        const pix = await Promise.all(promises);
-        newRoom.rental_image = pix;
-      }
       await newRoom.save();
       res.status(200).json(newRoom);
     }
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// route to upload pictures for a rental
+
+router.put("/rental/upload-picture/:id", isAuthenticated, async (req, res) => {
+  console.log("route: /rental/upload-picture/:id");
+  console.log(req.params);
+  console.log(req.files);
+  if (req.params.id) {
+    try {
+      const rental = await Room.findById(req.params.id);
+      if (rental) {
+        if (String(req.user._id) === String(rental.land_lord._id)) {
+          const files = req.files; // upload several pictures
+          const fileKeys = Object.keys(files);
+          if (fileKeys.length !== 0) {
+            if (Object.keys(rental.rental_image).length === 0) {
+              // case when no picture has been uploaded yet
+              if (fileKeys.length <= 5) {
+                // prevent user from uploading more than 5 pictures
+                const promises = fileKeys.map(async (element) => {
+                  try {
+                    const picture = await cloudinary.uploader.upload(
+                      files[element].path,
+                      {
+                        folder: `/airbnb/rooms/${rental._id}`,
+                      }
+                    );
+                    return picture;
+                  } catch (error) {
+                    return res.status(400).json({ message: error.message });
+                  }
+                });
+                const pix = await Promise.all(promises);
+                console.log(Object.keys(rental.rental_image));
+                console.log(rental.rental_image);
+                rental.rental_image = pix;
+                await rental.save();
+                res.status(200).json(rental);
+              } else {
+                res
+                  .status(400)
+                  .json({ message: "You can't upload more than 5 pictures" });
+              }
+            } else {
+              // case when some pictures already exist in the DB
+              if (fileKeys.length + rental.rental_image.length <= 5) {
+                // prevent user from uploading more than 5 pictures
+                const promises = fileKeys.map(async (element) => {
+                  try {
+                    const picture = await cloudinary.uploader.upload(
+                      files[element].path,
+                      {
+                        folder: `/airbnb/rooms/${rental._id}`,
+                      }
+                    );
+                    return picture;
+                  } catch (error) {
+                    return res.status(400).json({ message: error.message });
+                  }
+                });
+                const pix = await Promise.all(promises);
+                console.log(Object.keys(rental.rental_image));
+                console.log(rental.rental_image);
+                await rental.rental_image.push(...pix);
+                rental.markModified("rental_image"); // update the array in the DBS
+                await rental.save();
+                res.status(200).json(rental);
+              } else {
+                res
+                  .status(400)
+                  .json({ message: "You can't upload more than 5 pictures" });
+              }
+            }
+          } else {
+            res.status(400).json({ message: "Missing parameters" });
+          }
+        } else {
+          res.status(401).json({ message: "Unauthorized" });
+        }
+      } else {
+        res.status(400).json({ message: "Rental not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  } else {
+    res.status(400).json({ message: "Missing ID parameter" });
   }
 });
 
