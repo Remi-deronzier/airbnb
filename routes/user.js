@@ -17,14 +17,20 @@ router.post("/user/signup", async (req, res) => {
   console.log(req.fields);
   console.log(req.files);
   try {
-    if (await User.findOne({ email: req.fields.email })) {
-      res
-        .status(400)
-        .json({ message: "This email already exists in the data base" });
-    } else if (!req.fields.username) {
-      res.status(400).json({ message: "You must specify a username" });
+    const { email, username, phone, password } = req.fields;
+    if (await User.findOne({ email: email })) {
+      res.status(400).json({
+        message: "The email is already taken",
+      });
+    } else if (
+      (await User.find({ account: { username: username } }).length) !== 0
+    ) {
+      res.status(400).json({
+        message: "The username is already taken",
+      });
+    } else if (!(email && password && username && phone)) {
+      res.status(400).json({ message: "Missing parameters" });
     } else {
-      const { email, username, phone, avatar, password } = req.fields;
       const salt = uid2(16);
       const hash = SHA256(password + salt).toString(encBase64);
       const token = uid2(64);
@@ -38,11 +44,16 @@ router.post("/user/signup", async (req, res) => {
         hash: hash,
         salt: salt,
       });
-      const picture = await cloudinary.uploader.upload(req.files.picture.path, {
-        folder: `/airbnb/users/`,
-        public_id: newUser._id,
-      });
-      newUser.account.avatar = picture;
+      if (Object.keys(req.files).length !== 0) {
+        const picture = await cloudinary.uploader.upload(
+          req.files.picture.path,
+          {
+            folder: `/airbnb/users/`,
+            public_id: newUser._id,
+          }
+        );
+        newUser.account.avatar = picture;
+      }
       await newUser.save();
       res.status(200).json({
         id_: newUser._id,
