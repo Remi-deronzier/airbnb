@@ -167,7 +167,7 @@ router.post("/user/login", async (req, res) => {
   }
 });
 
-// route to get information abour one user
+// route to get information about one user
 
 router.get("/user/:id", async (req, res) => {
   console.log("route: /user/:id");
@@ -211,34 +211,30 @@ router.get("/user/rentals/:id", async (req, res) => {
   }
 });
 
-// route to update information about a user
+// route to update information about a user (except pictures)
 
 router.put("/user/update", isAuthenticated, async (req, res) => {
   console.log("route: /user/update");
   console.log(req.fields);
-  console.log(req.files);
   try {
-    const user = await User.findById(req.fields.id);
-    console.log(user);
-    if (!user) {
-      res.status(400).json({ message: "The ID is not correct" });
-    } else {
-      if (Object.keys(req.files).length !== 0) {
-        if (user.account.avatar) {
-          await cloudinary.api.delete_resources([
-            user.account.avatar.public_id,
-          ]);
+    const user = req.user;
+    const { email, username, phone } = req.fields;
+    if (email || username || phone) {
+      if (email || username) {
+        const emailCkeck = await User.findOne({ email: email });
+        const usernameCheck = await User.findOne({
+          "account.username": username,
+        });
+        // const usernameCheck = await User.find({
+        //   account: { username: new RegExp(username, "i") },
+        // });
+        console.log(usernameCheck);
+        if (emailCkeck) {
+          return res.status(400).json({ message: "Email already exists" });
+        } else if (usernameCheck) {
+          return res.status(400).json({ message: "Username already exists" });
         }
-        const newPicture = await cloudinary.uploader.upload(
-          req.files.picture.path,
-          {
-            folder: `/airbnb/users/`,
-            public_id: user._id,
-          }
-        );
-        user.account.avatar = newPicture;
       }
-      const { email, username, phone } = req.fields;
       reqKeys = Object.keys(req.fields);
       const userUpdated = reqKeys.reduce((obj, element) => {
         switch (element) {
@@ -254,8 +250,10 @@ router.put("/user/update", isAuthenticated, async (req, res) => {
         return obj;
       }, user);
       await userUpdated.save();
+      res.status(200).json({ message: "Profile successfully updated!" });
+    } else {
+      res.status(400).json({ message: "Missing parameters" });
     }
-    res.status(400).json({ message: "Profile successfully updated!" });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
