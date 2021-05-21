@@ -172,30 +172,42 @@ router.post("/user/login", async (req, res) => {
 router.get("/user/:id", async (req, res) => {
   console.log("route: /user/:id");
   console.log(req.params);
-  try {
-    const user = await User.findById(req.params.id).select("account email");
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  if (req.params.id) {
+    try {
+      const user = await User.findById(req.params.id).select("account email");
+      if (user) {
+        res.status(200).json(user);
+      } else {
+        res.status(400).json({ message: "User not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  } else {
+    res.status(400).json({ message: "Missing ID parameter" });
   }
 });
 
-// route to get all ad about one user
+// route to get all ads about one user
 
-router.get("/user-rentals/:id", async (req, res) => {
-  console.log("route: /user-rentals/:id");
+router.get("/user/rentals/:id", async (req, res) => {
+  console.log("route: /user/rentals/:id");
   console.log(req.params);
-  try {
-    const rentalsAgregation = await Room.find().populate(
-      "land_lord",
-      "account"
-    );
-    const rentals = rentalsAgregation.filter(
-      (element) => String(element.land_lord._id) === String(req.params.id) // Important not to forget the String to compare strings between strings
-    );
-    res.status(200).json(rentals);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  if (req.params.id) {
+    try {
+      const rentalsAgregation = await Room.find().populate(
+        "land_lord",
+        "account"
+      );
+      const rentals = rentalsAgregation.filter(
+        (element) => String(element.land_lord._id) === String(req.params.id) // Important not to forget the String to compare strings between strings
+      );
+      res.status(200).json(rentals);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  } else {
+    res.status(400).json({ message: "Missing ID paramters" });
   }
 });
 
