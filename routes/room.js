@@ -7,7 +7,7 @@ const User = require("../models/User");
 const Room = require("../models/Room");
 const isAuthenticated = require("../middlewares/isAuthenticated");
 
-// route to publish an ad
+// route to publish an ad (except pictures)
 
 router.post("/rental/publish", isAuthenticated, async (req, res) => {
   console.log("route : /room/publish");
@@ -177,15 +177,20 @@ router.delete(
                 }
                 return arr;
               }, [])[0];
-              await cloudinary.api.delete_resources([
-                rental.rental_image[index].public_id,
-              ]);
-              rental.rental_image.splice(index, 1);
-              rental.markModified("rental_image"); // update the array in the DBS
-              await rental.save();
-              res
-                .status(200)
-                .json({ message: "Picture successfully deleted!" });
+              console.log(index);
+              if (typeof index === "number") {
+                await cloudinary.api.delete_resources([
+                  rental.rental_image[index].public_id,
+                ]);
+                rental.rental_image.splice(index, 1);
+                rental.markModified("rental_image"); // update the array in the DBS
+                await rental.save();
+                res
+                  .status(200)
+                  .json({ message: "Picture successfully deleted!" });
+              } else {
+                res.status(400).json({ message: "Picture not found" });
+              }
             } else {
               res.status(400).json({ message: "Missing parameters" });
             }
@@ -204,7 +209,7 @@ router.delete(
   }
 );
 
-// route to update an ad
+// route to update an ad (except pictures)
 
 router.put("/rental/update/:id", isAuthenticated, async (req, res) => {
   console.log("route: /rental/update");
@@ -344,6 +349,14 @@ router.delete("/rental/delete/:id", isAuthenticated, async (req, res) => {
       if (rental) {
         if (String(req.user._id) === String(rental.land_lord._id)) {
           // check that the token match with the owner of the ad
+          console.log(Object.keys(rental.rental_image).length);
+          if (Object.keys(rental.rental_image).length !== 0) {
+            const picturesToDelete = rental.rental_image.map(
+              (element) => element.public_id
+            );
+            await cloudinary.api.delete_resources(picturesToDelete);
+          }
+          await cloudinary.api.delete_folder(`/airbnb/rooms/${rental._id}`);
           await Room.findByIdAndDelete(req.params.id);
           res.status(200).json({ message: "Rental successfully deleted" });
         } else {
@@ -381,35 +394,6 @@ router.get("/rental/:id", async (req, res) => {
     }
   } else {
     res.status(400).json({ message: "Missing ID parameter" });
-  }
-});
-
-// route to delete pictures of an ad
-
-router.delete("/rental/delete-pictures", isAuthenticated, async (req, res) => {
-  console.log("route: /rental/delete");
-  console.log(req.fields);
-  try {
-    const reqKeys = Object.keys(req.fields);
-    if (reqKeys.length !== 0) {
-      const regex = /(?<=airbnb\/rooms\/)\w+(?=\/\w+)/;
-      const rental = await Room.findById(req.fields.picture1.match(regex)[0]);
-      await cloudinary.api.delete_resources(Object.values(req.fields));
-      const picturesToKeep = await rental.rental_image
-        .reduce((arr, element, index) => {
-          if (Object.values(req.fields).indexOf(element.public_id) === -1) {
-            arr.push(index);
-          }
-          return arr;
-        }, [])
-        .map((element) => rental.rental_image[element]);
-      rental.rental_image = picturesToKeep;
-      rental.markModified("rental_image"); // update the array in the DBS
-      await rental.save();
-    }
-    res.status(200).json({ message: "Rental successfully updated!" });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
   }
 });
 

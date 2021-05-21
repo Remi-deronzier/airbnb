@@ -59,7 +59,7 @@ router.post("/user/signup", async (req, res) => {
 
 // route to upload a picture for a user
 
-router.put("/user/upload-picture/:id", async (req, res) => {
+router.put("/user/upload-picture/:id", isAuthenticated, async (req, res) => {
   console.log("route: /user/upload-picture/:id");
   console.log(req.params);
   console.log(req.files);
@@ -68,23 +68,27 @@ router.put("/user/upload-picture/:id", async (req, res) => {
       const user = await User.findById(req.params.id);
       console.log(user);
       if (user) {
-        if (req.files.picture) {
-          const picture = await cloudinary.uploader.upload(
-            req.files.picture.path,
-            {
-              folder: `/airbnb/users/`,
-              public_id: user._id,
-            }
-          );
-          user.account.avatar = picture;
-          await user.save();
-          res
-            .status(200)
-            .json(
-              await User.findById(req.params.id).select("account email token")
+        if (String(req.user._id) === String(user._id)) {
+          if (req.files.picture) {
+            const picture = await cloudinary.uploader.upload(
+              req.files.picture.path,
+              {
+                folder: `/airbnb/users/`,
+                public_id: user._id,
+              }
             );
+            user.account.avatar = picture;
+            await user.save();
+            res
+              .status(200)
+              .json(
+                await User.findById(req.params.id).select("account email token")
+              );
+          } else {
+            res.status(400).json({ message: "Missing parameters" });
+          }
         } else {
-          res.status(400).json({ message: "Missing parameters" });
+          res.status(401).json({ message: "Unauthorized" });
         }
       } else {
         res.status(400).json({ message: "User not found" });
@@ -99,7 +103,7 @@ router.put("/user/upload-picture/:id", async (req, res) => {
 
 // route to delete the avatar of one user
 
-router.delete("/user/delete-picture/:id", async (req, res) => {
+router.delete("/user/delete-picture/:id", isAuthenticated, async (req, res) => {
   console.log("route: /user/delete-picture/:id");
   console.log(req.params);
   if (req.params.id) {
@@ -108,10 +112,20 @@ router.delete("/user/delete-picture/:id", async (req, res) => {
         "email account token"
       );
       if (user) {
-        await cloudinary.api.delete_resources([user.account.avatar.public_id]);
-        user.account.avatar = null;
-        await user.save();
-        res.status(200).json(user);
+        if (String(req.user._id) === String(user._id)) {
+          if (user.account.avatar) {
+            await cloudinary.api.delete_resources([
+              user.account.avatar.public_id,
+            ]);
+            user.account.avatar = null;
+            await user.save();
+            res.status(200).json(user);
+          } else {
+            res.status(400).json({ message: "Picture not found" });
+          }
+        } else {
+          res.status(401).json({ message: "Unauthorized" });
+        }
       } else {
         res.status(400).json({ message: "User not found" });
       }
