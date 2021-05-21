@@ -211,7 +211,7 @@ router.get("/user/rentals/:id", async (req, res) => {
   }
 });
 
-// route to update information about a user (except pictures)
+// route to update information about a user (except pictures & password)
 
 router.put("/user/update", isAuthenticated, async (req, res) => {
   console.log("route: /user/update");
@@ -225,9 +225,6 @@ router.put("/user/update", isAuthenticated, async (req, res) => {
         const usernameCheck = await User.findOne({
           "account.username": username,
         });
-        // const usernameCheck = await User.find({
-        //   account: { username: new RegExp(username, "i") },
-        // });
         console.log(usernameCheck);
         if (emailCkeck) {
           return res.status(400).json({ message: "Email already exists" });
@@ -269,26 +266,30 @@ router.delete("/user/delete", isAuthenticated, async (req, res) => {
     const search = await Room.find({
       land_lord: user._id,
     });
-    const picturesToDelete = search
-      .map((element) => element.rental_image)
-      .reduce((arr, element) => {
-        for (let i = 0; i < element.length; i++) {
-          arr.push(element[i].public_id);
-        }
-        return arr;
-      }, []);
-    console.log(search);
-    console.log(picturesToDelete);
-    const idRentalToDelete = search.map((element) => element._id);
-    await cloudinary.api.delete_resources(picturesToDelete); // delete all the pictures of the ads in cloudinary
-    idRentalToDelete.forEach(
-      async (element) =>
-        await cloudinary.api.delete_folder(`/airbnb/rooms/${element}`) // delete all the folders of the ads in cloudinary
-    );
+    if (search.length !== 0) {
+      const picturesToDelete = search
+        .map((element) => element.rental_image)
+        .reduce((arr, element) => {
+          for (let i = 0; i < element.length; i++) {
+            arr.push(element[i].public_id);
+          }
+          return arr;
+        }, []);
+      if (picturesToDelete.length !== 0) {
+        await cloudinary.api.delete_resources(picturesToDelete); // delete all the pictures of the ads in cloudinary
+      }
+      const idRentalToDelete = search.map((element) => element._id);
+      if (idRentalToDelete.length !== 0) {
+        idRentalToDelete.forEach(
+          async (element) =>
+            await cloudinary.api.delete_folder(`/airbnb/rooms/${element}`) // delete all the folders of the ads in cloudinary
+        );
+      }
+      await Room.deleteMany({
+        land_lord: user._id, // delete all the ads in mongodb
+      });
+    }
     await User.findByIdAndDelete(user._id); // delete the user in mongodb
-    await Room.deleteMany({
-      land_lord: user._id, // delete all the ads in mongodb
-    });
     res.status(200).json({ message: "User successfully deleted" });
   } catch (error) {
     res.status(400).json({ message: error.message });
