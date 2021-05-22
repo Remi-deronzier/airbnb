@@ -59,8 +59,8 @@ router.post("/user/signup", async (req, res) => {
 
 // route to upload a picture for a user
 
-router.put("/user/upload-picture/:id", isAuthenticated, async (req, res) => {
-  console.log("route: /user/upload-picture/:id");
+router.put("/user/upload-picture/:id?", isAuthenticated, async (req, res) => {
+  console.log("route: /user/upload-picture/:id?");
   console.log(req.params);
   console.log(req.files);
   if (req.params.id) {
@@ -103,39 +103,43 @@ router.put("/user/upload-picture/:id", isAuthenticated, async (req, res) => {
 
 // route to delete the avatar of one user
 
-router.delete("/user/delete-picture/:id", isAuthenticated, async (req, res) => {
-  console.log("route: /user/delete-picture/:id");
-  console.log(req.params);
-  if (req.params.id) {
-    try {
-      const user = await User.findById(req.params.id).select(
-        "email account token"
-      );
-      if (user) {
-        if (String(req.user._id) === String(user._id)) {
-          if (user.account.avatar) {
-            await cloudinary.api.delete_resources([
-              user.account.avatar.public_id,
-            ]);
-            user.account.avatar = null;
-            await user.save();
-            res.status(200).json(user);
+router.delete(
+  "/user/delete-picture/:id?",
+  isAuthenticated,
+  async (req, res) => {
+    console.log("route: /user/delete-picture/:id?");
+    console.log(req.params);
+    if (req.params.id) {
+      try {
+        const user = await User.findById(req.params.id).select(
+          "email account token"
+        );
+        if (user) {
+          if (String(req.user._id) === String(user._id)) {
+            if (user.account.avatar) {
+              await cloudinary.api.delete_resources([
+                user.account.avatar.public_id,
+              ]);
+              user.account.avatar = null;
+              await user.save();
+              res.status(200).json(user);
+            } else {
+              res.status(400).json({ message: "Picture not found" });
+            }
           } else {
-            res.status(400).json({ message: "Picture not found" });
+            res.status(401).json({ message: "Unauthorized" });
           }
         } else {
-          res.status(401).json({ message: "Unauthorized" });
+          res.status(400).json({ message: "User not found" });
         }
-      } else {
-        res.status(400).json({ message: "User not found" });
+      } catch (error) {
+        res.status(400).json({ message: error.message });
       }
-    } catch (error) {
-      res.status(400).json({ message: error.message });
+    } else {
+      res.status(400).json({ message: "Missing ID parameter" });
     }
-  } else {
-    res.status(400).json({ message: "Missing ID parameter" });
   }
-});
+);
 
 // route login
 
@@ -188,10 +192,26 @@ router.get("/user/:id", async (req, res) => {
   }
 });
 
+// route to get information about all users
+
+router.get("/user", async (req, res) => {
+  console.log("route: /user");
+  try {
+    const user = await User.find().select("account email");
+    if (user) {
+      res.status(200).json(user);
+    } else {
+      res.status(400).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // route to get all ads about one user
 
-router.get("/user/rentals/:id", async (req, res) => {
-  console.log("route: /user/rentals/:id");
+router.get("/user/rentals/:id?", async (req, res) => {
+  console.log("route: /user/rentals/:id?");
   console.log(req.params);
   if (req.params.id) {
     try {

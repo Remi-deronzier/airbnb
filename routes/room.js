@@ -66,8 +66,8 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
 
 // route to upload pictures for a rental
 
-router.put("/rental/upload-picture/:id", isAuthenticated, async (req, res) => {
-  console.log("route: /rental/upload-picture/:id");
+router.put("/rental/upload-picture/:id?", isAuthenticated, async (req, res) => {
+  console.log("route: /rental/upload-picture/:id?");
   console.log(req.params);
   console.log(req.files);
   if (req.params.id) {
@@ -156,10 +156,10 @@ router.put("/rental/upload-picture/:id", isAuthenticated, async (req, res) => {
 // route to delete one picture from an ad
 
 router.delete(
-  "/rental/delete-picture/:id",
+  "/rental/delete-picture/:id?",
   isAuthenticated,
   async (req, res) => {
-    console.log("router: /rental/delete-picture/:id");
+    console.log("router: /rental/delete-picture/:id?");
     console.log(req.params);
     console.log(req.fields);
     if (req.params.id) {
@@ -211,7 +211,7 @@ router.delete(
 
 // route to update an ad (except pictures)
 
-router.put("/rental/update/:id", isAuthenticated, async (req, res) => {
+router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
   console.log("route: /rental/update");
   console.log(req.fields);
   console.log(req.params);
@@ -340,7 +340,7 @@ router.put("/rental/update/:id", isAuthenticated, async (req, res) => {
 
 // route to delete an ad
 
-router.delete("/rental/delete/:id", isAuthenticated, async (req, res) => {
+router.delete("/rental/delete/:id?", isAuthenticated, async (req, res) => {
   console.log("route: /rental/delete");
   console.log(req.params);
   if (req.params.id) {
@@ -394,6 +394,22 @@ router.get("/rental/:id", async (req, res) => {
     }
   } else {
     res.status(400).json({ message: "Missing ID parameter" });
+  }
+});
+
+// route to read all ads
+
+router.get("/rental", async (req, res) => {
+  console.log("route: /rental");
+  try {
+    const rental = await Room.find().populate("land_lord", "account");
+    if (rental) {
+      res.status(200).json(rental);
+    } else {
+      res.status(400).json({ message: "Rental not found" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 
