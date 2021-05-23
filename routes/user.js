@@ -5,10 +5,16 @@ const uid2 = require("uid2");
 const SHA256 = require("crypto-js/sha256");
 const encBase64 = require("crypto-js/enc-base64");
 const cloudinary = require("cloudinary").v2;
+const mailgun = require("mailgun-js");
 
 const User = require("../models/User");
 const Room = require("../models/Room");
 const isAuthenticated = require("../middlewares/isAuthenticated");
+const DOMAIN = process.env.DOMAIN;
+const mg = mailgun({
+  apiKey: process.env.MAILGUN_API_KEY,
+  domain: DOMAIN,
+});
 
 // route signup
 
@@ -311,6 +317,45 @@ router.delete("/user/delete", isAuthenticated, async (req, res) => {
     }
     await User.findByIdAndDelete(user._id); // delete the user in mongodb
     res.status(200).json({ message: "User successfully deleted" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// route to update password
+
+router.put("/user/update-password", isAuthenticated, async (req, res) => {
+  console.log("route: /user/update-password");
+  console.log(req.fields);
+  try {
+    const { newPassword, previousPassword } = req.fields;
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+    if (newPassword && previousPassword) {
+      if (newPassword !== previousPassword) {
+        const salt = uid2(16);
+        const hash = SHA256(salt + newPassword).toString(encBase64);
+        const token = uid2(64);
+        user.token = token;
+        user.hash = hash;
+        user.salt = salt;
+        await user.save();
+        const data = {
+          from: "Remi <me@sandboxf1775e33cb2d49b9bc361a7ac72cb5c9.mailgun.org>",
+          to: "deronzier.remi@gmail.com",
+          subject: "Password updated",
+          text: "Your password was successfully updated!",
+        };
+        await mg.messages().send(data);
+        res
+          .status(200)
+          .json(await User.findById(user._id).select("account email token"));
+      } else {
+        res.status(400).json({ message: "You must change your password!" });
+      }
+    } else {
+      res.status(400).json({ message: "Missing parameters" });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
