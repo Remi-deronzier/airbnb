@@ -10,6 +10,7 @@ const mailgun = require("mailgun-js");
 const User = require("../models/User");
 const Room = require("../models/Room");
 const isAuthenticated = require("../middlewares/isAuthenticated");
+const { estimatedDocumentCount } = require("../models/User");
 const DOMAIN = process.env.DOMAIN;
 const mg = mailgun({
   apiKey: process.env.MAILGUN_API_KEY,
@@ -388,6 +389,43 @@ router.put("/user/recover-password", async (req, res) => {
         };
         await mg.messages().send(data);
         res.status(200).json({ message: "A link has been sent to the user" });
+      } else {
+        res.status(400).json({ message: "User not found" });
+      }
+    } else {
+      res.status(400).json({ message: "Missing parameters" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// route to reset the password
+
+router.put("/user/reset-password", async (req, res) => {
+  console.log("route: /user/reset-password");
+  console.log(req.fields);
+  try {
+    const { passwordToken, password } = req.fields;
+    if (passwordToken && password) {
+      const user = await User.findOne({ temporaryToken: passwordToken });
+      console.log(user);
+      if (user) {
+        const date = Date.now();
+        const salt = uid2(16);
+        if (date - user.timestamp <= 15 * 60 * 1000) {
+          user.salt = salt;
+          user.hash = SHA256(password + salt).toString(encBase64);
+          await user.save();
+          res
+            .status(200)
+            .json(await User.findById(user._id).select("email token"));
+        } else {
+          res.status(400).json({
+            message:
+              "You can't change your password anymore, you must start a new procedure!",
+          });
+        }
       } else {
         res.status(400).json({ message: "User not found" });
       }
