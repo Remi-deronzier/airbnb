@@ -332,26 +332,64 @@ router.put("/user/update-password", isAuthenticated, async (req, res) => {
     const userId = req.user._id;
     const user = await User.findById(userId);
     if (newPassword && previousPassword) {
-      if (newPassword !== previousPassword) {
-        const salt = uid2(16);
-        const hash = SHA256(salt + newPassword).toString(encBase64);
-        const token = uid2(64);
-        user.token = token;
-        user.hash = hash;
-        user.salt = salt;
+      if (
+        SHA256(previousPassword + user.salt).toString(encBase64) === user.hash
+      ) {
+        if (newPassword !== previousPassword) {
+          const salt = uid2(16);
+          const hash = SHA256(salt + newPassword).toString(encBase64);
+          const token = uid2(64);
+          user.token = token;
+          user.hash = hash;
+          user.salt = salt;
+          await user.save();
+          const data = {
+            from: "Remi <me@sandboxf1775e33cb2d49b9bc361a7ac72cb5c9.mailgun.org>",
+            to: "deronzier.remi@gmail.com",
+            subject: "Password updated",
+            text: "Your password was successfully updated!",
+          };
+          await mg.messages().send(data);
+          res
+            .status(200)
+            .json(await User.findById(user._id).select("account email token"));
+        } else {
+          res.status(400).json({ message: "You must change your password!" });
+        }
+      } else {
+        res.status(400).json({ message: "Wrong password" });
+      }
+    } else {
+      res.status(400).json({ message: "Missing parameters" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// route to recover one's password
+
+router.put("/user/recover-password", async (req, res) => {
+  console.log("route: /user/recover-password");
+  console.log(req.fields);
+  try {
+    const email = req.fields.email;
+    if (email) {
+      const user = await User.findOne({ email: email });
+      if (user) {
+        user.temporaryToken = uid2(64);
+        user.timestamp = Date.now();
         await user.save();
         const data = {
           from: "Remi <me@sandboxf1775e33cb2d49b9bc361a7ac72cb5c9.mailgun.org>",
           to: "deronzier.remi@gmail.com",
-          subject: "Password updated",
-          text: "Your password was successfully updated!",
+          subject: "Password modification",
+          text: `Click on this link to modify your password: https://airbnb/change-password?token=${user.temporaryToken}, You have 15 minutes to change your password!`,
         };
         await mg.messages().send(data);
-        res
-          .status(200)
-          .json(await User.findById(user._id).select("account email token"));
+        res.status(200).json({ message: "A link has been sent to the user" });
       } else {
-        res.status(400).json({ message: "You must change your password!" });
+        res.status(400).json({ message: "User not found" });
       }
     } else {
       res.status(400).json({ message: "Missing parameters" });
