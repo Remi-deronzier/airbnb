@@ -16,6 +16,8 @@ const User = mongoose.model("User", {
   token: String,
   hash: String,
   salt: String,
+  temporaryToken: String,
+  timestamp: Number,
 });
 
 module.exports = User;
