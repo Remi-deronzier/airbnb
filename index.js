@@ -4,9 +4,11 @@ const formidable = require("express-formidable");
 const mongoose = require("mongoose");
 const cloudinary = require("cloudinary").v2;
 require("dotenv").config();
+const cors = require("cors");
 
 const app = express();
 app.use(formidable());
+app.use(cors());
 
 // Connection with the DB
 mongoose.connect(process.env.MONGODB_URI, {
