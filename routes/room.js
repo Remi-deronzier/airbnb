@@ -27,6 +27,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
       selfCheckin,
       hairDryer,
       location,
+      locationGps: { lat, long },
     } = req.fields;
     dates = Object.values(req.fields).filter((element, index, arr) =>
       Object.keys(req.fields)[index].match(/date/)
@@ -42,6 +43,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
         rental_description: description,
         rental_price_one_night: price,
         rental_location: location,
+        rental_gps_location: [lat, long],
         rental_details: [
           { NUMBER_BEDROOMS: numberBedrooms },
           { WIFI: wifi },
@@ -237,6 +239,7 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
             selfCheckin,
             hairDryer,
             location,
+            locationGps: { lat, long },
           } = req.fields;
           if (
             !name &&
@@ -304,6 +307,9 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
                   break;
                 case "location":
                   obj.rental_location = location;
+                  break;
+                case "locationGps":
+                  obj.rental_gps_location = [lat, long];
                   break;
               }
               return obj;
@@ -444,22 +450,80 @@ router.get("/rentals", async (req, res) => {
       sortFilter.rental_price_one_night = "asc";
     }
     if (!limit) {
-      limit = 3;
+      limit = 20;
     }
     if (!page || page < 1) {
       page = 1;
     }
-    const search = await Room.find(filter)
-      .sort(sortFilter)
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit))
-      .populate("land_lord", "account");
-    // .select("rental_price_one_night rental_location");
-    const count = await Room.countDocuments(filter);
-    res.status(200).json({
-      count: count,
-      rooms: search,
-    });
+    const maxReturnedRentals = 20;
+    if (
+      Object.keys(filter).length !== 0 ||
+      Object.keys(sortFilter).length !== 0
+    ) {
+      const search = await Room.find(filter)
+        .sort(sortFilter)
+        .limit(Number(limit))
+        .skip((Number(page) - 1) * Number(limit))
+        .populate("land_lord", "account");
+      // .select("rental_price_one_night rental_location");
+      const count = await Room.countDocuments(filter);
+      res.status(200).json({
+        count: count,
+        rooms: search,
+      });
+    } else if (
+      Object.keys(filter).length === 0 &&
+      Object.keys(sortFilter).length === 0 &&
+      (await Room.countDocuments()) <= maxReturnedRentals
+    ) {
+      const count = await Room.countDocuments();
+      const rentals = await Room.find();
+      res.status(200).json({
+        count: count,
+        rooms: rentals,
+      });
+    } else {
+      const rentals = await Room.find();
+      const numberRentals = await Room.countDocuments();
+      let randomNumber = Math.floor(Math.random() * numberRentals);
+      const arrayOfRandomNumbers = [];
+      for (let i = 0; i < maxReturnedRentals; i++) {
+        while (arrayOfRandomNumbers.indexOf(randomNumber) !== -1) {
+          randomNumber = Math.floor(Math.random() * numberRentals);
+        }
+        arrayOfRandomNumbers.push(randomNumber);
+        randomNumber = Math.floor(Math.random() * numberRentals);
+      }
+      const rentalsResult = rentals.filter(
+        (element, index) => arrayOfRandomNumbers.indexOf(index) !== -1
+      );
+      res.status(200).json({
+        count: maxReturnedRentals,
+        rooms: rentalsResult,
+      });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// route to find rentals around
+
+router.get("/rentals/around", async (req, res) => {
+  console.log("route: /rentals/around");
+  console.log(req.query);
+  try {
+    const { longitude, latitude } = req.query;
+    if (longitude && latitude) {
+      const rentals = Room.find({
+        location: {
+          $near: [latitude, longitude],
+          $maxDistance: 0.1,
+        },
+      });
+    } else {
+      res.status(200).json({ message: "Missing parameters" });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
