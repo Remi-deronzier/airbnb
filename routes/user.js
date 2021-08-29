@@ -25,8 +25,9 @@ router.post("/user/signup", async (req, res) => {
   try {
     const { email, username, phone, password, description } = req.fields;
     const usernameExistingDBCheck = await User.find({
-      account: { username: username },
+      "account.username": username,
     });
+    console.log(usernameExistingDBCheck);
     if (await User.findOne({ email: email })) {
       res.status(400).json({
         message: "The email is already taken",
