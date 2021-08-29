@@ -23,11 +23,10 @@ router.post("/user/signup", async (req, res) => {
   console.log("route: /signup");
   console.log(req.fields);
   try {
-    const { email, username, phone, password } = req.fields;
+    const { email, username, phone, password, description } = req.fields;
     const usernameExistingDBCheck = await User.find({
       account: { username: username },
     });
-    // console.log(usernameExistingDBCheck.length);
     if (await User.findOne({ email: email })) {
       res.status(400).json({
         message: "The email is already taken",
@@ -36,7 +35,7 @@ router.post("/user/signup", async (req, res) => {
       res.status(400).json({
         message: "The username is already taken",
       });
-    } else if (!(email && password && username && phone)) {
+    } else if (!(email && password && username && phone && description)) {
       res.status(400).json({ message: "Missing parameters" });
     } else {
       const salt = uid2(16);
@@ -47,6 +46,7 @@ router.post("/user/signup", async (req, res) => {
         account: {
           username: username,
           phone: phone,
+          description,
         },
         token: token,
         hash: hash,
