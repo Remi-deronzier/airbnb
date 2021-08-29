@@ -35,7 +35,7 @@ router.post("/user/signup", async (req, res) => {
       res.status(400).json({
         message: "The username is already taken",
       });
-    } else if (!(email && password && username && phone && description)) {
+    } else if (!(email && password && username && description)) {
       res.status(400).json({ message: "Missing parameters" });
     } else {
       const salt = uid2(16);
