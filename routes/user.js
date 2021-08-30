@@ -23,7 +23,7 @@ router.post("/user/signup", async (req, res) => {
   console.log("route: /signup");
   console.log(req.fields);
   try {
-    const { email, username, phone, password, description } = req.fields;
+    const { email, username, password, description } = req.fields;
     const usernameExistingDBCheck = await User.find({
       "account.username": username,
     });
@@ -46,7 +46,6 @@ router.post("/user/signup", async (req, res) => {
         email: email,
         account: {
           username: username,
-          phone: phone,
           description,
         },
         token: token,

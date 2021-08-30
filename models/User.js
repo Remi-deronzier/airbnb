@@ -10,7 +10,6 @@ const User = mongoose.model("User", {
       required: true,
       type: String,
     },
-    phone: String,
     avatar: Object, // to upload a picture
     description: String,
   },
