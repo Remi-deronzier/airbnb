@@ -27,12 +27,13 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
       selfCheckin,
       hairDryer,
       location,
+      reviews,
       locationGps: { lat, long },
     } = req.fields;
     dates = Object.values(req.fields).filter((element, index, arr) =>
       Object.keys(req.fields)[index].match(/date/)
     );
-    if (!name || !price || dates.length === 0 || !location) {
+    if (!name || !price || dates.length === 0 || !location || !reviews) {
       res.status(400).json({
         message:
           "You must specify a name, a price, a location and at least one date for your rental",
@@ -57,6 +58,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
         ],
         rental_dates: dates,
         land_lord: req.user,
+        rental_reviews: reviews,
       });
       await newRoom.save();
       res.status(200).json(newRoom);
