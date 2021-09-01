@@ -454,7 +454,7 @@ router.get("/rentals", async (req, res) => {
         .sort(sortFilter)
         .limit(Number(limit))
         .skip((Number(page) - 1) * Number(limit))
-        .populate("land_lord", "account");
+        .populate("land_lord");
       const count = await Room.countDocuments(filter);
       res.status(200).json({
         count: count,
@@ -466,13 +466,13 @@ router.get("/rentals", async (req, res) => {
       (await Room.countDocuments()) <= maxReturnedRentals
     ) {
       const count = await Room.countDocuments();
-      const rentals = await Room.find();
+      const rentals = await Room.find().populate("land_lord");
       res.status(200).json({
         count: count,
         rooms: rentals,
       });
     } else {
-      const rentals = await Room.find();
+      const rentals = await Room.find().populate("land_lord");
       const numberRentals = await Room.countDocuments();
       let randomNumber = Math.floor(Math.random() * numberRentals);
       const arrayOfRandomNumbers = [];
