@@ -242,6 +242,7 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
             hairDryer,
             location,
             locationGps: { lat, long },
+            reviews,
           } = req.fields;
           if (
             !name &&
@@ -256,7 +257,10 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
             !entireHome &&
             !selfCheckin &&
             !hairDryer &&
-            !location // check that at least one modification of the ad has been specified by the user
+            !location &&
+            !reviews &&
+            !lat &&
+            !long // check that at least one modification of the ad has been specified by the user
           ) {
             res.status(400).json({ message: "Missing parameters" });
           } else {
