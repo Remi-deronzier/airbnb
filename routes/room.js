@@ -40,11 +40,12 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
       dates.length === 0 ||
       !location ||
       !reviews ||
-      !locationGps
+      !locationGps ||
+      !ratingValue
     ) {
       res.status(400).json({
         message:
-          "You must specify a name, a price, a location and at least one date for your rental",
+          "You must specify a name, a price, a location, the GPS coordinates, the number of reviews, the rate and at least one date for your rental",
       });
     } else {
       const newRoom = new Room({
