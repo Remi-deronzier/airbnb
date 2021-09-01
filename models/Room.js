@@ -37,6 +37,7 @@ const Room = mongoose.model("Room", {
     type: Array, // The dates are strings and stored in an array
   },
   rental_reviews: Number,
+  rental_rating_value: Number,
 });
 
 module.exports = Room;

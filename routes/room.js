@@ -28,12 +28,20 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
       hairDryer,
       location,
       reviews,
+      ratingValue,
       locationGps: { lat, long },
     } = req.fields;
     dates = Object.values(req.fields).filter((element, index, arr) =>
       Object.keys(req.fields)[index].match(/date/)
     );
-    if (!name || !price || dates.length === 0 || !location || !reviews) {
+    if (
+      !name ||
+      !price ||
+      dates.length === 0 ||
+      !location ||
+      !reviews ||
+      !locationGps
+    ) {
       res.status(400).json({
         message:
           "You must specify a name, a price, a location and at least one date for your rental",
@@ -59,6 +67,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
         rental_dates: dates,
         land_lord: req.user,
         rental_reviews: reviews,
+        rental_rating_value: ratingValue,
       });
       await newRoom.save();
       res.status(200).json(newRoom);
@@ -227,6 +236,7 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
       } else {
         if (String(req.user._id) === String(rental.land_lord._id)) {
           // check that the token match with the owner of the ad
+          let lat, long;
           const {
             name,
             description,
@@ -241,9 +251,13 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
             selfCheckin,
             hairDryer,
             location,
-            locationGps: { lat, long },
             reviews,
+            ratingValue,
           } = req.fields;
+          if (req.fields.locationGps) {
+            lat = req.fields.locationGps.lat;
+            long = req.fields.locationGps.long;
+          }
           if (
             !name &&
             !description &&
@@ -259,6 +273,7 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
             !hairDryer &&
             !location &&
             !reviews &&
+            !ratingValue &&
             !lat &&
             !long // check that at least one modification of the ad has been specified by the user
           ) {
@@ -317,6 +332,12 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
                 case "locationGps":
                   obj.rental_gps_location = [lat, long];
                   break;
+                case "ratingValue":
+                  obj.rental_rating_value = ratingValue;
+                  break;
+                case "reviews":
+                  obj.rental_reviews = reviews;
+                  break;
               }
               return obj;
             }, rental);
@@ -325,7 +346,6 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
               if (obj.rental_dates.indexOf(element) === -1) {
                 obj.rental_dates.push(element);
               }
-              // obj.rental_dates.push(element);
               return obj;
             }, rentalUpdated);
             rentalUpdated = datesToDelete.reduce((obj, element) => {
