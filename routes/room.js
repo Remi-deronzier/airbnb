@@ -409,22 +409,6 @@ router.get("/rental/:id", async (req, res) => {
   }
 });
 
-// route to read all ads
-
-router.get("/rental", async (req, res) => {
-  console.log("route: /rental");
-  try {
-    const rental = await Room.find().populate("land_lord", "account");
-    if (rental) {
-      res.status(200).json(rental);
-    } else {
-      res.status(400).json({ message: "Rental not found" });
-    }
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
 // route to filter an ad
 
 router.get("/rentals", async (req, res) => {
@@ -471,7 +455,6 @@ router.get("/rentals", async (req, res) => {
         .limit(Number(limit))
         .skip((Number(page) - 1) * Number(limit))
         .populate("land_lord", "account");
-      // .select("rental_price_one_night rental_location");
       const count = await Room.countDocuments(filter);
       res.status(200).json({
         count: count,
