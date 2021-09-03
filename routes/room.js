@@ -29,6 +29,9 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
       location,
       reviews,
       ratingValue,
+      locationGps,
+    } = req.fields;
+    const {
       locationGps: { lat, long },
     } = req.fields;
     dates = Object.values(req.fields).filter((element, index, arr) =>
@@ -53,7 +56,7 @@ router.post("/rental/publish", isAuthenticated, async (req, res) => {
         rental_description: description,
         rental_price_one_night: price,
         rental_location: location,
-        rental_gps_location: [lat, long],
+        rental_gps_location: [long, lat],
         rental_details: [
           { NUMBER_BEDROOMS: numberBedrooms },
           { WIFI: wifi },
@@ -331,7 +334,7 @@ router.put("/rental/update/:id?", isAuthenticated, async (req, res) => {
                   obj.rental_location = location;
                   break;
                 case "locationGps":
-                  obj.rental_gps_location = [lat, long];
+                  obj.rental_gps_location = [long, lat];
                   break;
                 case "ratingValue":
                   obj.rental_rating_value = ratingValue;
@@ -524,13 +527,15 @@ router.get("/rentals/around", async (req, res) => {
   console.log(req.query);
   try {
     const { longitude, latitude } = req.query;
+    console.log(longitude, latitude);
     if (longitude && latitude) {
-      const rentals = Room.find({
-        location: {
-          $near: [latitude, longitude],
+      const rentals = await Room.find({
+        rental_gps_location: {
+          $near: [longitude, latitude],
           $maxDistance: 0.1,
         },
       });
+      res.status(200).json(rentals);
     } else {
       res.status(200).json({ message: "Missing parameters" });
     }
