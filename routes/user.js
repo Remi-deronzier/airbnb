@@ -73,7 +73,6 @@ router.put("/user/upload-picture/:id?", isAuthenticated, async (req, res) => {
   if (req.params.id) {
     try {
       const user = await User.findById(req.params.id);
-      console.log(user);
       if (user) {
         if (String(req.user._id) === String(user._id)) {
           if (req.files.picture) {
@@ -273,7 +272,7 @@ router.put("/user/update", isAuthenticated, async (req, res) => {
         return obj;
       }, user);
       await userUpdated.save();
-      res.status(200).json({ message: "Profile successfully updated!" });
+      res.status(200).json(user);
     } else {
       res.status(400).json({ message: "Missing parameters" });
     }
