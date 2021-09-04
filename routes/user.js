@@ -166,7 +166,7 @@ router.post("/user/login", async (req, res) => {
       if (hash === user.hash) {
         res.status(200).json({
           id_: user._id,
-          token: user._id,
+          token: user.token,
           account: user.account,
         });
       } else {
