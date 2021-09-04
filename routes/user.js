@@ -245,14 +245,13 @@ router.put("/user/update", isAuthenticated, async (req, res) => {
   console.log(req.fields);
   try {
     const user = req.user;
-    const { email, username, phone } = req.fields;
-    if (email || username || phone) {
+    const { email, username, description } = req.fields;
+    if (email || username || description) {
       if (email || username) {
         const emailCkeck = await User.findOne({ email: email });
         const usernameCheck = await User.findOne({
           "account.username": username,
         });
-        console.log(usernameCheck);
         if (emailCkeck) {
           return res.status(400).json({ message: "Email already exists" });
         } else if (usernameCheck) {
@@ -268,8 +267,8 @@ router.put("/user/update", isAuthenticated, async (req, res) => {
           case "username":
             obj.account.username = username;
             break;
-          case "phone":
-            obj.account.phone = phone;
+          case "description":
+            obj.account.description = description;
         }
         return obj;
       }, user);

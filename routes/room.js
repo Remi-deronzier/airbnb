@@ -527,7 +527,6 @@ router.get("/rentals/around", async (req, res) => {
   console.log(req.query);
   try {
     const { longitude, latitude } = req.query;
-    console.log(longitude, latitude);
     if (longitude && latitude) {
       const rentals = await Room.find({
         rental_gps_location: {
