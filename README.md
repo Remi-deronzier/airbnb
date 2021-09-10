@@ -37,4 +37,15 @@ When installation is complete, run the project:
 npx nodemon index.js
 ```
 
+## Route documentation
+
+### /user/signup (POST)
+Add a new user in DB
+
+Body | Type | Required
+------------ | ------------- | ------------
+`email` | string | Yes
+`password` | string | Yes
+`username` | string | Yes
+`description` | string | Yes
 
