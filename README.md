@@ -37,7 +37,7 @@ When installation is complete, run the project:
 npx nodemon index.js
 ```
 
-## Route documentation
+## Route documentation (main routes)
 
 ### /user/signup (POST)
 Add a new user in DB
@@ -48,4 +48,63 @@ Body | Type | Required
 `password` | string | Yes
 `username` | string | Yes
 `description` | string | Yes
+
+### /user/login (POST)
+Log a user
+
+Body | Type | Required
+------------ | ------------- | ------------
+`email` | string | Yes
+`password` | string | Yes
+
+### /user/:id (GET)
+Get all information about one user
+
+Param | Required | Description
+------------ | ------------- | ------------
+`id` | Yes | user id
+
+### /user/update (PUT)
+Update information about one user (except picture & password)
+
+Body | Type | Required
+------------ | ------------- | ------------
+`email` | string | No
+`username` | string | No
+`description` | string | No
+
+At least one field must be updated
+
+### /user/upload-picture/:id (PUT)
+Upload a picture for a user
+
+Param | Required | Description
+------------ | ------------- | ------------
+`id` | Yes | user id
+
+Body | Type | Required
+------------ | ------------- | ------------
+`picture` | file | Yes
+
+
+
+### /rentals (GET)
+Get all the rentals
+
+### /rental/:id (GET)
+Get one specific rental
+
+Param | Required | Description
+------------ | ------------- | ------------
+`id` | Yes | rental id
+
+### /rentals/around (GET)
+Get all rentals around the position of the user
+
+Param | Required | Description
+------------ | ------------- | ------------
+`longitude` | Yes | longitude of the position of the user
+`latitude` | Yes | latitude of the position of the user
+
+
 
