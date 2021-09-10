@@ -2,6 +2,8 @@
 
 Airbnb API is a miniature-scale reproduction of the Airbnb API that allows users to : create an account, login to this account, create a rental, update this rental (including uploading pictures), filter the rentals and delete a rental.
 
+Frontend project is here: 👉 [Frontend](https://github.com/Remi-deronzier/airbnb-app)
+
 ## Prerequisties
 
 Before you begin, ensure you have met the following requirements:
@@ -105,6 +107,3 @@ Param | Required | Description
 ------------ | ------------- | ------------
 `longitude` | Yes | longitude of the position of the user
 `latitude` | Yes | latitude of the position of the user
-
-
-
