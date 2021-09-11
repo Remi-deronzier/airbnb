@@ -77,7 +77,7 @@ Body | Type | Required
 
 At least one field must be updated
 
-Authentication: Bearer token
+**Authentication: `Bearer token`**
 
 ### /user/upload-picture/:id (PUT)
 Upload a picture for a user
@@ -90,7 +90,7 @@ Body | Type | Required
 ------------ | ------------- | ------------
 `picture` | file | Yes
 
-Authentication: Bearer token
+**Authentication: `Bearer token`**
 
 
 ### /rentals (GET)
